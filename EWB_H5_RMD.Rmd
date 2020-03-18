@@ -1,0 +1,46 @@
+---
+title: "EWB_H5_RMD"
+author: "Evan Woelk Balzer"
+date: "11/03/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Question 1
+Done and done!
+
+#Question 2
+```{r Getting the ball rolling}
+#Calling libraries#
+library(tidyverse)
+library(rpart.plot)
+library(rpart)
+library(hablar)
+
+#Reading in the csv files#
+crime10csv <- read_csv("crimedata10.csv")
+crimecsv <- read_csv("crimedata.csv")
+crimecsv %>% convert(int(ExpenditureYear), lgl(BelowWage), int(StateSize), dbl(Education), lgl(HighYouthUnemploy), dbl(Wage))
+```
+
+
+```{r Build a tree}
+
+```
+
+
+```{r }
+
+```
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
