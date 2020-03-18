@@ -26,21 +26,104 @@ crimecsv <- read_csv("crimedata.csv")
 crimecsv %>% convert(int(ExpenditureYear), lgl(BelowWage), int(StateSize), dbl(Education), lgl(HighYouthUnemploy), dbl(Wage))
 ```
 
-
 ```{r Build a tree}
+#making a dataset that only includes crime rate and my six parameters
+mycrime.df <- select(crimecsv, CrimeRate, ExpenditureYear, BelowWage, StateSize, Education, HighYouthUnemploy, Wage)
 
+#Building the regression tree
+q1.rpart <- rpart(CrimeRate ~ ., data = mycrime.df) 
+q1.rpart
 ```
 
-
-```{r }
-
-```
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+#Question 3
+```{r Summary of the tree}
+#Tree summary
+summary(q1.rpart)
+printcp(q1.rpart)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+The most important variable was ExpenditureYear (importance = 31), followed by Wage, BelowWage, and StateSize (importances = 21, 16 and 15 respectively.). Of the least importance were Education and HighYouthUnemploy (importance = 9 and 7 respectively). The two variables used in the tree were ExpenditureYear and StateSize.
+
+#Question 4
+```{r Plotting the tree}
+#Plot the tree
+rpart.plot(q1.rpart, digits = 3, fallen.leaves = TRUE,tweak=1.3)
+```
+
+The most important variable (per capita spending on police) was the most informative variable and split the sample almost evenly into two groups. It is furthermore informative to identify the crime rate response to police expenditure of 77 to 108 and greater than 108. This final category represented the highest crime rate, whereas small states with low police expenditures had the lowest crime rates.
+
+#Question 5
+Expenditure > 108: 131
+77 < Expenditure < 108: 111
+Expenditure < 77 AND State Size < 23: 72.5
+Expenditure < 77 AND State Size > 23: 97.6
+
+#Question 6
+Most of my predictor variables were excluded from the model. Only ExpenditureYear and StateSize were retained. Parameters are excluded when they introduce too much variance in the final tree. Pruning is done such that it minimizes both variance and error in the model. When parameters are correlated with one another, they may identify splits at similar points, in which case a the tree can be pruned to minimize complexity. The output of the model indicates that four splits occur above the 0.01 complexity threshold.
+
+
+#Question 7
+```{r Predicting crime rate with a new dataset}
+tencrime.df <- select(crime10csv, CrimeRate, ExpenditureYear, BelowWage, StateSize, Education, HighYouthUnemploy, Wage)
+tencrime.df
+c10_predict <- predict(q1.rpart, tencrime.df)
+c10_predict
+```
+
+#Question 8
+```{r testing the correlation between the data and the model}
+cor(c10_predict, tencrime.df[["CrimeRate"]],method="pearson")
+```
+The correlation coefficient is 0.585602
+
+#Question 9
+```{r Calculating MAE}
+MAE <- function(actual, predicted)  {
+  mean(abs(actual - predicted))
+}
+
+MAE(predicted = c10_predict,actual = tencrime.df[["CrimeRate"]])
+```
+The mean absolute error was 25.28952. Relative to a maximum crime rate of 100, this value is quite high, and indicates that the model is not very good at predicting crime rate.
+
+
+#Question 10
+```{r Predicting crime rates by chance}
+#Choosing a vector of crime values from the full dataset
+crimecsv_actual <- crimecsv$CrimeRate
+
+#Building the absolute error function
+MAE2 <- function(data,indices)  {
+  d<-data[indices]
+  return(mean(abs(crimecsv_actual - d)))
+}
+
+#making crime guesses with the custom function
+library(boot)
+crimeguesses <- boot(data=crimecsv_actual, statistic=MAE2, R=1000)
+crimeguesses
+
+#histogram of the mean absolute differences values
+{hist(crimeguesses$t)
+  abline(v=mean(crimeguesses$t),col="red")}
+
+#mean difference
+mean(crimeguesses$t)
+```
+
+#Question 11
+MAE from model: 25.28952
+MAE from guesses: 32.59699
+
+The model appears to be better at predicting crime rate than random guessing.
+
+
+#Question 12
+```{r Asking whether guesses differ from the modeled results   }
+#asking whether the distribution of guesses differs from the modeled values
+crime.p.value <- length(which((crimeguesses$t<25.28952)==T))/1000
+crime.p.value
+```
+The p-value is 0.011 < 0.05. There is indeed a significant difference between the predictive power of the model and random guessing.
+
+
